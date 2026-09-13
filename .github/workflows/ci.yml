@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+env:
+  POSTGRES_DB: ci_db
+  POSTGRES_USER: ci_user
+  POSTGRES_PASSWORD: ci_password
+  POSTGRES_PORT: 5432
+
+jobs:
+  validar-entorno:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el codigo
+        uses: actions/checkout@v4
+
+      - name: Validar la definicion del entorno
+        run: docker compose config
+
+      - name: Levantar el entorno y aplicar migraciones
+        run: docker compose up -d --wait
+
+      - name: Verificar el estado del esquema
+        run: docker compose exec -T db psql -U ci_user -d ci_db -c "SELECT version, description, success FROM flyway_schema_history;"
+
+      - name: Detener el entorno
+        if: always()
+        run: docker compose down -v
