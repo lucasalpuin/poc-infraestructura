@@ -22,8 +22,11 @@ jobs:
       - name: Validar la definicion del entorno
         run: docker compose config
 
-      - name: Levantar el entorno y aplicar migraciones
-        run: docker compose up -d --wait
+      - name: Levantar la base de datos
+        run: docker compose up -d --wait db
+
+      - name: Aplicar las migraciones
+        run: docker compose run --rm flyway
 
       - name: Verificar el estado del esquema
         run: docker compose exec -T db psql -U ci_user -d ci_db -c "SELECT version, description, success FROM flyway_schema_history;"
